@@ -31,7 +31,7 @@
     background: repeating-linear-gradient(90deg, #14502d 0 72px, #175a33 72px 144px);
     min-height: 100vh;
   }
-  .wrap { max-width: 920px; margin: 0 auto; padding: 24px 16px 48px; }
+  .wrap { max-width: 1000px; margin: 0 auto; padding: 24px 16px 48px; }
   .hidden { display: none !important; }
 
   h1, h2 { font-family: var(--display); font-weight: 600; margin: 0; letter-spacing: 0.01em; }
@@ -142,17 +142,34 @@
   /* elenco */
   .row {
     display: grid;
-    grid-template-columns: 1.1fr 0.9fr 0.5fr 1fr 0.4fr 1.5fr;
+    grid-template-columns: 1fr 0.8fr 0.45fr 0.9fr 0.35fr 1.3fr 0.8fr;
     gap: 12px;
     align-items: center;
     padding: 12px 0;
     border-top: 1px solid var(--rule);
   }
-  .list.has-actions .row { grid-template-columns: 1.1fr 0.9fr 0.5fr 1fr 0.4fr 1.3fr 184px; }
+  .list.has-actions .row { grid-template-columns: 1fr 0.8fr 0.45fr 0.9fr 0.35fr 1fr 1fr 184px; }
   .row.head { border-top: 0; padding-top: 0; font-size: 14px; color: var(--muted); font-weight: 600; }
   .row .nome { font-weight: 600; overflow-wrap: anywhere; }
   .row .giocatore, .row .numero { font-family: var(--display); font-weight: 600; letter-spacing: .04em; overflow-wrap: anywhere; }
   .row .note { color: var(--muted); overflow-wrap: anywhere; }
+  .row .prezzo { text-align: right; }
+  .row .prezzo b { font-family: var(--display); font-weight: 600; font-size: 18px; color: var(--pitch-dark); }
+  .row .prezzo small { display: block; font-size: 12px; line-height: 1.3; color: var(--muted); }
+  .row .prezzo .tbd { color: var(--muted); font-style: italic; }
+  .row.head .h-prezzo { text-align: right; }
+
+  /* riquadro prezzo nel modulo */
+  .pricebox { background: #fff; border: 1.5px dashed #b9c0ae; border-radius: 6px; padding: 10px 12px; }
+  .pb-lines { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 16px; font-size: 15px; color: var(--muted); }
+  .pb-lines b { color: var(--ink); font-weight: 600; }
+  .pb-total { margin-left: auto; font-size: 15px; color: var(--ink); }
+  .pb-total b { font-family: var(--display); font-size: 24px; color: var(--pitch-dark); margin-left: 4px; }
+  .pb-wait { color: var(--muted); }
+  .pb-reason { margin: 8px 0 6px; font-size: 14px; font-weight: 600; color: #8a5a00; }
+  .pb-manual { max-width: 220px; }
+  .order-total { font-size: 15px; color: var(--muted); }
+  .order-total b { font-family: var(--display); font-size: 20px; color: var(--pitch-dark); margin-left: 4px; }
   .tag {
     display: inline-block; margin-left: 6px; font-size: 12px; font-weight: 600; line-height: 18px;
     background: var(--yellow); color: var(--pitch-dark); border-radius: 3px; padding: 0 6px; vertical-align: 2px;
@@ -212,13 +229,18 @@
   @media (max-width: 640px) {
     .grid { grid-template-columns: 1fr; }
     .span2 { grid-column: auto; }
-    .row, .list.has-actions .row { grid-template-columns: 1fr auto; gap: 4px 12px; }
+    .row, .list.has-actions .row { grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; }
+    .row .taglia { justify-self: end; }
+    .row .prezzo small { max-width: 150px; margin-left: auto; }
     .row.head { display: none; }
     .row .nome { grid-column: 1; }
     .row .taglia { grid-column: 2; grid-row: 1; }
-    .row .linkcell, .row .note, .row .actions { grid-column: 1 / -1; }
+    .row .linkcell { grid-column: 1; grid-row: 2; }
+    .row .prezzo { grid-column: 2; grid-row: 2; }
+    .row .note, .row .actions { grid-column: 1 / -1; }
     .row .giocatore { grid-column: 1; }
-    .row .numero { grid-column: 2; text-align: center; }
+    .row .numero { grid-column: 2; text-align: right; }
+    .pb-total { margin-left: 0; width: 100%; }
     .row .giocatore:empty, .row .numero:empty, .row .note:empty { display: none; }
     .row .giocatore:not(:empty)::before { content: "Giocatore: "; font-family: var(--body); font-weight: 400; letter-spacing: 0; color: var(--muted); }
     .row .numero:not(:empty)::before { content: "N° "; font-family: var(--body); font-weight: 400; letter-spacing: 0; color: var(--muted); }
@@ -290,6 +312,7 @@
           <label for="note">Note <small>(facoltativo)</small></label>
           <input id="note" name="note" maxlength="200" placeholder="Patch, versione retro, maniche lunghe...">
         </div>
+        <div class="span2 pricebox" id="addPrice" aria-live="polite"></div>
       </div>
       <p class="msg" id="addMsg" role="status"></p>
       <button type="submit" id="addBtn">Aggiungi alla rosa</button>
@@ -299,6 +322,7 @@
       <div class="cardhead">
         <h2>La rosa</h2>
         <div class="sizes" id="sizeSummary" aria-label="Maglie per taglia"></div>
+        <div class="order-total" id="orderTotal"></div>
       </div>
       <p class="msg" id="listMsg" role="alert"></p>
       <div id="list" class="list"></div>
@@ -329,6 +353,7 @@
         <li>Premi <b>Vai al negozio</b>, trova la maglia che vuoi e <b>copia il link</b> dalla barra degli indirizzi (sul telefono: tasto Condividi › Copia).</li>
         <li>Torna su questa pagina e compila: <b>il tuo nome</b>, la <b>taglia</b> e <b>incolla il link</b>.</li>
         <li>Vuoi nome e numero sulla schiena? Scrivili nei campi <b>Nome del giocatore</b> e <b>Numero</b>. Patch e altre richieste vanno nelle <b>Note</b>.</li>
+        <li>Il <b>prezzo si calcola da solo</b>: quello della maglia sul sito, <b>+<span data-extra="pers">€5,00</span></b> se metti nome e/o numero e <b>+<span data-extra="note">€2,50</span></b> se scrivi una nota. Se il prezzo non si trova, scrivilo tu nel campo che compare.</li>
         <li>Premi <b>Aggiungi alla rosa</b>. La tua maglia compare nell'elenco in basso con l'etichetta <b>la tua</b>.</li>
       </ol>
       <p class="help-tip">Hai sbagliato qualcosa? Premi <b>Modifica</b> o <b>Elimina</b> sulla tua maglia, ma solo dallo <b>stesso telefono o PC</b> con cui l'hai inserita. Altrimenti scrivi al capitano.</p>
@@ -350,6 +375,9 @@
   let isAdmin = false;
   let sizes = [];
   let uid = 0;
+  let pricing = { personalizzazione: 5, note: 2.5 };
+  const eur = new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' });
+  const money = (n) => eur.format(n);
 
   // ---------- utilita' ----------
 
@@ -419,7 +447,7 @@
   // legge i campi di un modulo (aggiunta o modifica) e li controlla
   function collect(form) {
     const v = (n) => (form.elements[n] ? form.elements[n].value.trim() : '');
-    return { nome: v('nome'), link: v('link'), taglia: v('taglia'), stampa: v('stampa').toUpperCase(), numero: v('numero'), note: v('note') };
+    return { nome: v('nome'), link: v('link'), taglia: v('taglia'), stampa: v('stampa').toUpperCase(), numero: v('numero'), note: v('note'), prezzoManuale: v('prezzoManuale') };
   }
   function check(d) {
     if (!d.nome) return 'Inserisci il tuo nome.';
@@ -427,6 +455,111 @@
     if (!isHttpUrl(d.link)) return 'Il link deve iniziare con http:// o https://';
     if (d.numero && !/^\d{1,2}$/.test(d.numero)) return 'Il numero deve essere tra 0 e 99.';
     return '';
+  }
+
+
+  // ---------- prezzo ----------
+
+  function parseEuro(text) {
+    const s = String(text || '').trim().replace(/\s|€/g, '').replace(',', '.');
+    if (!/^\d{1,4}(\.\d{1,2})?$/.test(s)) return null;
+    const n = Number(s);
+    return n > 0 ? n : null;
+  }
+
+  function extraFor(form) {
+    const v = (n) => (form.elements[n] ? form.elements[n].value.trim() : '');
+    return {
+      pers: (v('stampa') || v('numero')) ? pricing.personalizzazione : 0,
+      note: v('note') ? pricing.note : 0
+    };
+  }
+
+  // riquadro che mostra prezzo maglia + extra = totale, e chiede il prezzo a mano se il sito non risponde
+  function priceWidget(form, box, initial) {
+    const st = { status: 'idle', base: null, reason: '', lastLink: '', seq: 0, pending: null, timer: null };
+    const manual = input('prezzoManuale', '', { inputMode: 'decimal', placeholder: 'Es. 26,00', maxLength: 8 });
+    const manualField = field('Prezzo della maglia sul sito (€)', manual, 'pb-manual');
+    const lines = el('div', 'pb-lines');
+    const reason = el('p', 'pb-reason');
+    box.innerHTML = '';
+    box.append(lines, reason, manualField);
+
+    function render() {
+      const showManual = st.status === 'manual';
+      manualField.classList.toggle('hidden', !showManual);
+      reason.classList.toggle('hidden', !(showManual && st.reason));
+      reason.textContent = st.reason;
+      lines.innerHTML = '';
+      if (st.status === 'idle') { lines.appendChild(el('span', 'pb-wait', 'Incolla il link della maglia: il prezzo si calcola da solo.')); return; }
+      if (st.status === 'loading') { lines.appendChild(el('span', 'pb-wait', 'Cerco il prezzo sul sito...')); return; }
+      const base = showManual ? parseEuro(manual.value) : st.base;
+      const x = extraFor(form);
+      const item = (label, val) => { const s = el('span'); s.append(label + ' '); s.appendChild(el('b', '', val)); return s; };
+      lines.appendChild(item('Maglia', base === null ? '—' : money(base)));
+      if (x.pers) lines.appendChild(item('Nome/numero', '+' + money(x.pers)));
+      if (x.note) lines.appendChild(item('Note', '+' + money(x.note)));
+      const tot = el('span', 'pb-total');
+      tot.append('Totale');
+      tot.appendChild(el('b', '', base === null ? '—' : money(base + x.pers + x.note)));
+      lines.appendChild(tot);
+    }
+
+    async function lookup() {
+      clearTimeout(st.timer);
+      const link = form.elements.link.value.trim();
+      if (link === st.lastLink && st.status !== 'idle') return st.pending;
+      st.lastLink = link;
+      if (!isHttpUrl(link)) { st.status = 'idle'; st.base = null; render(); return; }
+      const my = ++st.seq;
+      st.status = 'loading'; render();
+      st.pending = api({ action: 'price', pwd: pwd, link: link }).then((res) => {
+        if (my !== st.seq) return;
+        if (res.ok && res.pricing) pricing = res.pricing;
+        if (res.ok && res.price != null) { st.status = 'ok'; st.base = res.price; st.reason = ''; }
+        else { st.status = 'manual'; st.base = null; st.reason = res.reason || res.error || 'Prezzo non trovato: scrivilo tu.'; }
+        render();
+      });
+      return st.pending;
+    }
+
+    form.elements.link.addEventListener('input', () => { clearTimeout(st.timer); st.timer = setTimeout(lookup, 700); });
+    form.elements.link.addEventListener('change', lookup);
+    ['stampa', 'numero', 'note'].forEach((n) => form.elements[n].addEventListener('input', render));
+    manual.addEventListener('input', render);
+
+    if (initial && initial.prezzo != null) {
+      st.lastLink = initial.link;
+      if (initial.fonte === 'manuale') { st.status = 'manual'; st.reason = ''; manual.value = String(initial.prezzo).replace('.', ','); }
+      else { st.status = 'ok'; st.base = initial.prezzo; }
+      render();
+    } else {
+      render();
+      if (initial) lookup();
+    }
+
+    return {
+      // aspetta la ricerca in corso, poi dice cosa manca (stringa vuota = tutto ok)
+      async ready() {
+        if (form.elements.link.value.trim() !== st.lastLink) await lookup(); else if (st.pending) await st.pending;
+        if (st.status === 'manual' && parseEuro(manual.value) === null) return 'Scrivi il prezzo della maglia (es. 26,00).';
+        return '';
+      },
+      needManual(msg) { st.status = 'manual'; st.base = null; st.reason = msg || ''; render(); manual.focus(); },
+      reset() { st.status = 'idle'; st.base = null; st.lastLink = ''; st.reason = ''; manual.value = ''; render(); },
+      render: render
+    };
+  }
+
+  function priceCell(r) {
+    const td = el('div', 'prezzo');
+    if (r.totale == null) { td.appendChild(el('span', 'tbd', 'da verificare')); return td; }
+    td.appendChild(el('b', '', money(r.totale)));
+    let sub = 'maglia ' + money(r.prezzo);
+    if (r.extra) sub += ' + ' + money(r.extra);
+    if (r.fonte === 'manuale') sub += ' (a mano)';
+    td.appendChild(el('small', '', sub));
+    return td;
   }
 
   // ---------- elenco ----------
@@ -460,6 +593,7 @@
     row.appendChild(el('div', 'giocatore', r.stampa || ''));
     row.appendChild(el('div', 'numero', r.numero || ''));
     row.appendChild(el('div', 'note', r.note || ''));
+    row.appendChild(priceCell(r));
     if (isAdmin || r.mine) {
       const actions = el('div', 'actions');
       const edit = el('button', 'small ghost', 'Modifica'); edit.type = 'button';
@@ -521,12 +655,15 @@
       field('Numero', input('numero', r.numero, { maxLength: 2, inputMode: 'numeric' })),
       field('Note', input('note', r.note, { maxLength: 200 }), 'span2')
     );
+    const pbox = el('div', 'span2 pricebox');
+    grid.appendChild(pbox);
     const msg = el('p', 'msg'); msg.setAttribute('role', 'alert');
     const actions = el('div', 'actions');
     const save = el('button', 'small', 'Salva'); save.type = 'submit';
     const cancel = el('button', 'small ghost', 'Annulla'); cancel.type = 'button';
     actions.append(save, cancel);
     box.append(grid, msg, actions);
+    const pw = priceWidget(box, pbox, { link: r.link, prezzo: r.prezzo, fonte: r.fonte });
 
     cancel.addEventListener('click', () => box.replaceWith(renderRow(r)));
     box.addEventListener('submit', async (ev) => {
@@ -535,8 +672,11 @@
       const err = check(d);
       if (err) { setMsg(msg, err, 'err'); return; }
       await withBusy(save, 'Salvo...', async () => {
-        const res = await api(editAction(r, { kind: 'Update', data: d }));
+        const perr = await pw.ready();
+        if (perr) { setMsg(msg, perr, 'err'); return; }
+        const res = await api(editAction(r, { kind: 'Update', data: collect(box) }));
         if (res.ok) await loadList();
+        else if (res.needPrice) { pw.needManual(res.error); setMsg(msg, 'Scrivi il prezzo della maglia e salva di nuovo.', 'err'); }
         else setMsg(msg, res.error || 'Errore.', 'err');
       });
     });
@@ -559,6 +699,24 @@
     });
   }
 
+  function renderTotal(rows) {
+    const box = $('orderTotal');
+    box.innerHTML = '';
+    if (!rows.length) return;
+    let cents = 0, missing = 0;
+    rows.forEach((r) => { if (r.totale == null) missing++; else cents += Math.round(r.totale * 100); });
+    box.append('Totale ordine');
+    box.appendChild(el('b', '', money(cents / 100)));
+    if (missing) box.append(' + ' + missing + ' da verificare');
+  }
+
+  function applyPricing(p) {
+    if (p) pricing = p;
+    document.querySelectorAll('[data-extra="pers"]').forEach((e) => { e.textContent = money(pricing.personalizzazione); });
+    document.querySelectorAll('[data-extra="note"]').forEach((e) => { e.textContent = money(pricing.note); });
+    addPrice.render();
+  }
+
   async function loadList() {
     const tokens = readTokens();
     const res = isAdmin
@@ -576,12 +734,14 @@
       writeTokens(keep);
     }
     sizes = res.sizes || sizes;
+    applyPricing(res.pricing);
     if ($('taglia').options.length <= 1) fillSizes($('taglia'));
 
     const n = res.rows.length;
     $('count').textContent = n;
     $('countLabel').textContent = n === 1 ? 'maglia in rosa' : 'maglie in rosa';
     renderSummary(res.rows);
+    renderTotal(res.rows);
 
     list.innerHTML = '';
     const withActions = isAdmin || res.rows.some((r) => r.mine);
@@ -592,6 +752,7 @@
     }
     const head = el('div', 'row head');
     ['Nome', 'Maglia', 'Taglia', 'Giocatore', 'N°', 'Note'].forEach((h) => head.appendChild(el('div', '', h)));
+    head.appendChild(el('div', 'h-prezzo', 'Prezzo'));
     if (withActions) head.appendChild(el('div', ''));
     list.appendChild(head);
     res.rows.forEach((r) => list.appendChild(renderRow(r)));
@@ -647,6 +808,7 @@
   });
 
   // aggiunta maglia
+  const addPrice = priceWidget($('addForm'), $('addPrice'), null);
   $('addForm').addEventListener('submit', async (ev) => {
     ev.preventDefault();
     const d = collect($('addForm'));
@@ -654,7 +816,10 @@
     if (err) { setMsg('addMsg', err, 'err'); return; }
     setMsg('addMsg', '');
     await withBusy($('addBtn'), 'Invio in corso...', async () => {
-      const res = await api(Object.assign({ action: 'add', pwd: pwd }, d));
+      const perr = await addPrice.ready();
+      if (perr) { setMsg('addMsg', perr, 'err'); return; }
+      const res = await api(Object.assign({ action: 'add', pwd: pwd }, collect($('addForm'))));
+      if (res.needPrice) { addPrice.needManual(res.error); setMsg('addMsg', 'Scrivi il prezzo della maglia e premi di nuovo Aggiungi.', 'err'); return; }
       if (!res.ok) { setMsg('addMsg', res.error || 'Errore.', 'err'); return; }
       if (res.id && res.token) {
         const tokens = readTokens();
@@ -662,6 +827,7 @@
         writeTokens(tokens);
       }
       $('addForm').reset();
+      addPrice.reset();
       setMsg('addMsg', 'Maglia aggiunta alla rosa. Da questo browser potrai modificarla o eliminarla.', 'ok');
       await loadList();
     });
