@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ordine maglie</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --pitch: #1d6b3b;
+    --pitch-dark: #0e3f23;
+    --chalk: #f7f8f1;
+    --ink: #13261a;
+    --muted: #5b6b60;
+    --yellow: #f3c623;
+    --red: #c8312b;
+    --rule: #d9dccf;
+    --display: "Oswald", "Arial Narrow", Impact, sans-serif;
+    --body: "Source Sans 3", "Segoe UI", Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    font-family: var(--body);
+    font-size: 16px;
+    line-height: 1.5;
+    color: var(--ink);
+    background: repeating-linear-gradient(90deg, #14502d 0 72px, #175a33 72px 144px);
+    min-height: 100vh;
+  }
+  .wrap { max-width: 780px; margin: 0 auto; padding: 24px 16px 48px; }
+  .hidden { display: none !important; }
+
+  h1, h2 { font-family: var(--display); font-weight: 600; margin: 0; letter-spacing: 0.01em; }
+
+  .card {
+    background: var(--chalk);
+    border-radius: 6px;
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+  .card h2 { font-size: 22px; margin-bottom: 12px; }
+
+  /* intestazione: il campo visto dall'alto */
+  .pitch {
+    position: relative;
+    border: 2px solid rgba(255,255,255,.85);
+    border-radius: 4px;
+    padding: 28px 24px;
+    margin-bottom: 16px;
+    color: #fff;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+  .pitch::before { /* linea di meta' campo */
+    content: ""; position: absolute; top: 0; bottom: 0; left: 62%;
+    border-left: 2px solid rgba(255,255,255,.35);
+  }
+  .pitch::after { /* cerchio di centro */
+    content: ""; position: absolute; top: 50%; left: 62%;
+    width: 150px; height: 150px; margin: -75px 0 0 -75px;
+    border: 2px solid rgba(255,255,255,.35); border-radius: 50%;
+  }
+  .pitch > * { position: relative; z-index: 1; }
+  .pitch h1 { font-size: clamp(30px, 7vw, 46px); line-height: 1.05; }
+  .pitch p { margin: 6px 0 0; color: #d6efdc; }
+  .shirt {
+    flex: none;
+    min-width: 92px;
+    text-align: center;
+    background: var(--yellow);
+    color: var(--pitch-dark);
+    border-radius: 6px;
+    padding: 8px 12px 10px;
+  }
+  .shirt b { display: block; font-family: var(--display); font-weight: 600; font-size: 52px; line-height: 1; }
+  .shirt span { font-size: 13px; font-weight: 600; }
+
+  label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+  input, select {
+    width: 100%;
+    font: inherit;
+    color: var(--ink);
+    background: #fff;
+    border: 1.5px solid #b9c0ae;
+    border-radius: 4px;
+    padding: 9px 10px;
+    min-height: 44px;
+  }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .span2 { grid-column: span 2; }
+
+  button, .btn {
+    font: inherit;
+    font-weight: 600;
+    min-height: 44px;
+    padding: 0 18px;
+    border-radius: 4px;
+    border: 2px solid var(--pitch);
+    background: var(--pitch);
+    color: #fff;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  button:hover, .btn:hover { background: var(--pitch-dark); border-color: var(--pitch-dark); }
+  button.ghost { background: transparent; color: var(--pitch-dark); }
+  button.ghost:hover { background: #e7ebdc; }
+  button.danger { background: transparent; border-color: var(--red); color: var(--red); }
+  button.danger:hover { background: var(--red); color: #fff; }
+  button.small { min-height: 36px; padding: 0 12px; font-size: 14px; }
+  .btn.shop { background: #fff; color: var(--pitch-dark); border-color: #fff; }
+  .btn.shop:hover { background: var(--yellow); border-color: var(--yellow); }
+  :focus-visible { outline: 3px solid var(--yellow); outline-offset: 2px; }
+  input:focus-visible, select:focus-visible { outline-color: var(--pitch); }
+
+  .msg { margin: 10px 0 0; min-height: 22px; font-size: 15px; }
+  .msg.err { color: var(--red); font-weight: 600; }
+  .msg.ok { color: var(--pitch); font-weight: 600; }
+
+  /* elenco */
+  .row {
+    display: grid;
+    grid-template-columns: 1.1fr 1.3fr 0.5fr 1.6fr;
+    gap: 12px;
+    align-items: center;
+    padding: 12px 0;
+    border-top: 1px solid var(--rule);
+  }
+  .row.admin { grid-template-columns: 1fr 1.2fr 0.5fr 1.4fr auto; }
+  .row.head { border-top: 0; padding-top: 0; font-size: 14px; color: var(--muted); font-weight: 600; }
+  .row .nome { font-weight: 600; overflow-wrap: anywhere; }
+  .row .note { color: var(--muted); overflow-wrap: anywhere; }
+  .size {
+    display: inline-block; min-width: 40px; text-align: center;
+    font-family: var(--display); font-weight: 600; font-size: 18px;
+    border: 2px solid var(--pitch); border-radius: 4px; padding: 0 8px; color: var(--pitch-dark);
+  }
+  .row a { color: var(--pitch); font-weight: 600; }
+  .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  .empty { padding: 8px 0 0; color: var(--muted); }
+
+  .foot { text-align: center; margin-top: 8px; }
+  .foot button { background: transparent; border-color: rgba(255,255,255,.6); color: #fff; }
+  .foot button:hover { background: rgba(255,255,255,.15); }
+  .adminbar { background: var(--yellow); border-radius: 6px; padding: 10px 14px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; gap: 12px; font-weight: 600; color: var(--pitch-dark); }
+
+  @media (max-width: 640px) {
+    .grid { grid-template-columns: 1fr; }
+    .span2 { grid-column: auto; }
+    .row, .row.admin { grid-template-columns: 1fr auto; gap: 4px 12px; }
+    .row.head { display: none; }
+    .row .nome { grid-column: 1; }
+    .row .taglia { grid-column: 2; grid-row: 1; }
+    .row .linkcell, .row .note, .row .actions { grid-column: 1 / -1; }
+    .pitch::after { left: 78%; }
+    .pitch::before { left: 78%; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ACCESSO -->
+  <section id="login">
+    <div class="pitch">
+      <div>
+        <h1>Ordine maglie</h1>
+        <p>Entra con la password che ti ha dato il capitano.</p>
+      </div>
+    </div>
+    <form class="card" id="loginForm" autocomplete="off">
+      <label for="pwd">Password</label>
+      <input id="pwd" type="password" required>
+      <p class="msg" id="loginMsg" role="alert"></p>
+      <button type="submit">Entra in campo</button>
+    </form>
+  </section>
+
+  <!-- APP -->
+  <section id="app" class="hidden">
+    <div class="pitch">
+      <div>
+        <h1>Ordine maglie</h1>
+        <p>Aggiungi la tua maglia: link, taglia e note.</p>
+        <p style="margin-top:14px"><a class="btn shop" href="https://www.11calcio-it.com/" target="_blank" rel="noopener noreferrer">Vai al negozio</a></p>
+      </div>
+      <div class="shirt" aria-live="polite"><b id="count">0</b><span>maglie in rosa</span></div>
+    </div>
+
+    <div id="adminBar" class="adminbar hidden">
+      <span>Area admin attiva: puoi modificare ed eliminare le righe.</span>
+      <button class="small ghost" id="adminExit" type="button">Esci dall'area admin</button>
+    </div>
+
+    <form class="card" id="addForm" autocomplete="off">
+      <h2>Aggiungi la tua maglia</h2>
+      <div class="grid">
+        <div>
+          <label for="nome">Nome</label>
+          <input id="nome" maxlength="50" required>
+        </div>
+        <div>
+          <label for="taglia">Taglia</label>
+          <select id="taglia" required><option value="">Scegli</option></select>
+        </div>
+        <div class="span2">
+          <label for="link">Link della maglia</label>
+          <input id="link" type="url" inputmode="url" placeholder="https://www.11calcio-it.com/..." maxlength="500" required>
+        </div>
+        <div class="span2">
+          <label for="note">Note</label>
+          <input id="note" maxlength="200" placeholder="Numero, nome sulla schiena, patch...">
+        </div>
+      </div>
+      <p class="msg" id="addMsg" role="status"></p>
+      <button type="submit" id="addBtn">Aggiungi alla rosa</button>
+    </form>
+
+    <div class="card">
+      <h2>La rosa</h2>
+      <div id="list"></div>
+    </div>
+
+    <div class="foot">
+      <button type="button" id="adminOpen" class="small">Area admin</button>
+    </div>
+
+    <form class="card hidden" id="adminForm" style="margin-top:16px" autocomplete="off">
+      <h2>Area admin</h2>
+      <label for="adminPwd">Password admin</label>
+      <input id="adminPwd" type="password" required>
+      <p class="msg" id="adminMsg" role="alert"></p>
+      <button type="submit">Accedi</button>
+    </form>
+  </section>
+</div>
+
+<script>
+  // Dopo aver pubblicato lo script Google, incolla qui l'URL dell'app web (finisce con /exec)
+  const API_URL = 'https://script.google.com/macros/s/AKfycbyPa5LFzcUlee-FW4Qg5Sjd0paOfo8bfYYbHYugyUwMpWj62ZkYYfPfXGBwVpL1MXqpDw/exec';
+
+  const $ = (id) => document.getElementById(id);
+  let pwd = '';
+  let adminPwd = '';
+  let isAdmin = false;
+  let sizes = [];
+
+  async function api(payload) {
+    if (API_URL.indexOf('https://') !== 0) {
+      return { ok: false, error: 'Manca l\'URL dello script: va inserito in index.html.' };
+    }
+    try {
+      const res = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(payload)
+      });
+      return await res.json();
+    } catch (e) {
+      return { ok: false, error: 'Connessione non riuscita. Controlla la rete e riprova.' };
+    }
+  }
+
+  function setMsg(id, text, kind) {
+    const el = $(id);
+    el.textContent = text || '';
+    el.className = 'msg' + (kind ? ' ' + kind : '');
+  }
+
+  function isHttpUrl(v) { return /^https?:\/\/\S+$/i.test(v); }
+
+  function fillSizes(select, selected) {
+    select.innerHTML = '';
+    const first = document.createElement('option');
+    first.value = ''; first.textContent = 'Scegli';
+    select.appendChild(first);
+    sizes.forEach((s) => {
+      const o = document.createElement('option');
+      o.value = s; o.textContent = s;
+      if (s === selected) o.selected = true;
+      select.appendChild(o);
+    });
+  }
+
+  function el(tag, cls, text) {
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text !== undefined) e.textContent = text;
+    return e;
+  }
+
+  function linkCell(url) {
+    const td = el('div', 'linkcell');
+    if (isHttpUrl(url)) {
+      const a = el('a', '', 'Vedi maglia');
+      a.href = url; a.target = '_blank'; a.rel = 'noopener noreferrer';
+      td.appendChild(a);
+    } else {
+      td.textContent = '-';
+    }
+    return td;
+  }
+
+  function renderRow(r) {
+    const row = el('div', 'row' + (isAdmin ? ' admin' : ''));
+    row.appendChild(el('div', 'nome', r.nome));
+    row.appendChild(linkCell(r.link));
+    const t = el('div', 'taglia'); t.appendChild(el('span', 'size', r.taglia));
+    row.appendChild(t);
+    row.appendChild(el('div', 'note', r.note || ''));
+    if (isAdmin) {
+      const actions = el('div', 'actions');
+      const edit = el('button', 'small ghost', 'Modifica'); edit.type = 'button';
+      const del = el('button', 'small danger', 'Elimina'); del.type = 'button';
+      edit.addEventListener('click', () => row.replaceWith(editRow(r)));
+      del.addEventListener('click', async () => {
+        if (!confirm('Eliminare la maglia di ' + r.nome + '?')) return;
+        const res = await api({ action: 'adminDelete', adminPwd: adminPwd, id: r.id });
+        if (res.ok) loadList(); else alert(res.error || 'Errore.');
+      });
+      actions.append(edit, del);
+      row.appendChild(actions);
+    }
+    return row;
+  }
+
+  function editRow(r) {
+    const box = el('form', 'row admin');
+    const nome = el('input'); nome.value = r.nome; nome.maxLength = 50; nome.required = true; nome.setAttribute('aria-label', 'Nome');
+    const link = el('input'); link.value = r.link; link.maxLength = 500; link.required = true; link.setAttribute('aria-label', 'Link');
+    const taglia = el('select'); taglia.setAttribute('aria-label', 'Taglia'); fillSizes(taglia, r.taglia);
+    const note = el('input'); note.value = r.note || ''; note.maxLength = 200; note.setAttribute('aria-label', 'Note');
+    const actions = el('div', 'actions');
+    const save = el('button', 'small', 'Salva'); save.type = 'submit';
+    const cancel = el('button', 'small ghost', 'Annulla'); cancel.type = 'button';
+    actions.append(save, cancel);
+    box.append(nome, link, taglia, note, actions);
+    cancel.addEventListener('click', () => box.replaceWith(renderRow(r)));
+    box.addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      if (!isHttpUrl(link.value.trim())) { alert('Il link deve iniziare con http:// o https://'); return; }
+      const res = await api({
+        action: 'adminUpdate', adminPwd: adminPwd, id: r.id,
+        nome: nome.value, link: link.value, taglia: taglia.value, note: note.value
+      });
+      if (res.ok) loadList(); else alert(res.error || 'Errore.');
+    });
+    return box;
+  }
+
+  async function loadList() {
+    const res = isAdmin
+      ? await api({ action: 'adminList', adminPwd: adminPwd })
+      : await api({ action: 'list', pwd: pwd });
+    const list = $('list');
+    if (!res.ok) {
+      list.textContent = res.error || 'Impossibile caricare l\'elenco.';
+      return res;
+    }
+    sizes = res.sizes || sizes;
+    if ($('taglia').options.length <= 1) fillSizes($('taglia'));
+    $('count').textContent = res.rows.length;
+    list.innerHTML = '';
+    if (!res.rows.length) {
+      list.appendChild(el('p', 'empty', 'Nessuna maglia ancora. Aggiungi la prima.'));
+      return res;
+    }
+    const head = el('div', 'row head' + (isAdmin ? ' admin' : ''));
+    ['Nome', 'Maglia', 'Taglia', 'Note'].forEach((h) => head.appendChild(el('div', '', h)));
+    if (isAdmin) head.appendChild(el('div', '', ''));
+    list.appendChild(head);
+    res.rows.forEach((r) => list.appendChild(renderRow(r)));
+    return res;
+  }
+
+  // accesso amici
+  $('loginForm').addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    setMsg('loginMsg', 'Controllo in corso...');
+    pwd = $('pwd').value;
+    const res = await api({ action: 'list', pwd: pwd });
+    if (!res.ok) { setMsg('loginMsg', res.error || 'Errore.', 'err'); return; }
+    sessionStorage.setItem('pwd', pwd);
+    $('login').classList.add('hidden');
+    $('app').classList.remove('hidden');
+    await loadList();
+  });
+
+  // aggiunta maglia
+  $('addForm').addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    const nome = $('nome').value.trim();
+    const link = $('link').value.trim();
+    const taglia = $('taglia').value;
+    const note = $('note').value.trim();
+    if (!nome) { setMsg('addMsg', 'Inserisci il tuo nome.', 'err'); return; }
+    if (!isHttpUrl(link)) { setMsg('addMsg', 'Il link deve iniziare con http:// o https://', 'err'); return; }
+    if (!taglia) { setMsg('addMsg', 'Scegli una taglia.', 'err'); return; }
+    $('addBtn').disabled = true;
+    setMsg('addMsg', 'Invio in corso...');
+    const res = await api({ action: 'add', pwd: pwd, nome: nome, link: link, taglia: taglia, note: note });
+    $('addBtn').disabled = false;
+    if (!res.ok) { setMsg('addMsg', res.error || 'Errore.', 'err'); return; }
+    $('nome').value = ''; $('link').value = ''; $('note').value = ''; $('taglia').value = '';
+    setMsg('addMsg', 'Maglia aggiunta alla rosa.', 'ok');
+    loadList();
+  });
+
+  // area admin
+  $('adminOpen').addEventListener('click', () => {
+    $('adminForm').classList.toggle('hidden');
+    if (!$('adminForm').classList.contains('hidden')) $('adminPwd').focus();
+  });
+  $('adminForm').addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    setMsg('adminMsg', 'Controllo in corso...');
+    adminPwd = $('adminPwd').value;
+    const res = await api({ action: 'adminList', adminPwd: adminPwd });
+    if (!res.ok) { adminPwd = ''; setMsg('adminMsg', res.error || 'Errore.', 'err'); return; }
+    isAdmin = true;
+    $('adminPwd').value = '';
+    setMsg('adminMsg', '');
+    $('adminForm').classList.add('hidden');
+    $('adminOpen').classList.add('hidden');
+    $('adminBar').classList.remove('hidden');
+    loadList();
+  });
+  $('adminExit').addEventListener('click', () => {
+    isAdmin = false; adminPwd = '';
+    $('adminBar').classList.add('hidden');
+    $('adminOpen').classList.remove('hidden');
+    loadList();
+  });
+
+  // se la password e' gia' stata inserita in questa scheda, entra direttamente
+  (async () => {
+    const saved = sessionStorage.getItem('pwd');
+    if (!saved) return;
+    pwd = saved;
+    const res = await api({ action: 'list', pwd: pwd });
+    if (res.ok) {
+      $('login').classList.add('hidden');
+      $('app').classList.remove('hidden');
+      await loadList();
+    } else {
+      sessionStorage.removeItem('pwd');
+    }
+  })();
+</script>
+</body>
+</html>
