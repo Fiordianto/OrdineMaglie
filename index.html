@@ -31,7 +31,7 @@
     background: repeating-linear-gradient(90deg, #14502d 0 72px, #175a33 72px 144px);
     min-height: 100vh;
   }
-  .wrap { max-width: 780px; margin: 0 auto; padding: 24px 16px 48px; }
+  .wrap { max-width: 920px; margin: 0 auto; padding: 24px 16px 48px; }
   .hidden { display: none !important; }
 
   h1, h2 { font-family: var(--display); font-weight: 600; margin: 0; letter-spacing: 0.01em; }
@@ -83,6 +83,7 @@
   .shirt span { font-size: 13px; font-weight: 600; }
 
   label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+  label small { font-weight: 400; color: var(--muted); }
   input, select {
     width: 100%;
     font: inherit;
@@ -93,6 +94,7 @@
     padding: 9px 10px;
     min-height: 44px;
   }
+  input::placeholder { text-transform: none; }
   .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   .span2 { grid-column: span 2; }
 
@@ -112,6 +114,7 @@
     justify-content: center;
   }
   button:hover, .btn:hover { background: var(--pitch-dark); border-color: var(--pitch-dark); }
+  button:disabled { opacity: .6; cursor: progress; }
   button.ghost { background: transparent; color: var(--pitch-dark); }
   button.ghost:hover { background: #e7ebdc; }
   button.danger { background: transparent; border-color: var(--red); color: var(--red); }
@@ -123,22 +126,37 @@
   input:focus-visible, select:focus-visible { outline-color: var(--pitch); }
 
   .msg { margin: 10px 0 0; min-height: 22px; font-size: 15px; }
+  .msg:empty { min-height: 0; }
   .msg.err { color: var(--red); font-weight: 600; }
   .msg.ok { color: var(--pitch); font-weight: 600; }
+  #addMsg, #loginMsg, #adminMsg { min-height: 22px; }
+
+  /* intestazione della rosa con il riepilogo taglie */
+  .cardhead { display: flex; justify-content: space-between; align-items: center; gap: 8px 16px; flex-wrap: wrap; margin-bottom: 12px; }
+  .cardhead h2 { margin: 0; }
+  .sizes { display: flex; gap: 6px; flex-wrap: wrap; }
+  .chip { font-size: 14px; border: 1.5px solid var(--rule); border-radius: 4px; padding: 1px 8px; color: var(--muted); background: #fff; }
+  .chip b { font-family: var(--display); font-weight: 600; color: var(--pitch-dark); margin-right: 4px; }
+  .chip.zero { opacity: .5; }
 
   /* elenco */
   .row {
     display: grid;
-    grid-template-columns: 1.1fr 1.3fr 0.5fr 1.6fr;
+    grid-template-columns: 1.1fr 0.9fr 0.5fr 1fr 0.4fr 1.5fr;
     gap: 12px;
     align-items: center;
     padding: 12px 0;
     border-top: 1px solid var(--rule);
   }
-  .row.admin { grid-template-columns: 1fr 1.2fr 0.5fr 1.4fr auto; }
+  .list.has-actions .row { grid-template-columns: 1.1fr 0.9fr 0.5fr 1fr 0.4fr 1.3fr 184px; }
   .row.head { border-top: 0; padding-top: 0; font-size: 14px; color: var(--muted); font-weight: 600; }
   .row .nome { font-weight: 600; overflow-wrap: anywhere; }
+  .row .giocatore, .row .numero { font-family: var(--display); font-weight: 600; letter-spacing: .04em; overflow-wrap: anywhere; }
   .row .note { color: var(--muted); overflow-wrap: anywhere; }
+  .tag {
+    display: inline-block; margin-left: 6px; font-size: 12px; font-weight: 600; line-height: 18px;
+    background: var(--yellow); color: var(--pitch-dark); border-radius: 3px; padding: 0 6px; vertical-align: 2px;
+  }
   .size {
     display: inline-block; min-width: 40px; text-align: center;
     font-family: var(--display); font-weight: 600; font-size: 18px;
@@ -146,7 +164,12 @@
   }
   .row a { color: var(--pitch); font-weight: 600; }
   .actions { display: flex; gap: 8px; flex-wrap: wrap; }
-  .empty { padding: 8px 0 0; color: var(--muted); }
+  .empty { padding: 8px 0 0; color: var(--muted); margin: 0; }
+
+  /* modifica di una riga: stesso schema del modulo di aggiunta */
+  .editbox { border-top: 1px solid var(--rule); padding: 14px 0 16px; }
+  .editbox .edittitle { font-family: var(--display); font-weight: 600; font-size: 18px; margin: 0 0 10px; }
+  .editbox .actions { margin-top: 10px; }
 
   .foot { text-align: center; margin-top: 8px; }
   .foot button { background: transparent; border-color: rgba(255,255,255,.6); color: #fff; }
@@ -156,11 +179,17 @@
   @media (max-width: 640px) {
     .grid { grid-template-columns: 1fr; }
     .span2 { grid-column: auto; }
-    .row, .row.admin { grid-template-columns: 1fr auto; gap: 4px 12px; }
+    .row, .list.has-actions .row { grid-template-columns: 1fr auto; gap: 4px 12px; }
     .row.head { display: none; }
     .row .nome { grid-column: 1; }
     .row .taglia { grid-column: 2; grid-row: 1; }
     .row .linkcell, .row .note, .row .actions { grid-column: 1 / -1; }
+    .row .giocatore { grid-column: 1; }
+    .row .numero { grid-column: 2; text-align: center; }
+    .row .giocatore:empty, .row .numero:empty, .row .note:empty { display: none; }
+    .row .giocatore:not(:empty)::before { content: "Giocatore: "; font-family: var(--body); font-weight: 400; letter-spacing: 0; color: var(--muted); }
+    .row .numero:not(:empty)::before { content: "N° "; font-family: var(--body); font-weight: 400; letter-spacing: 0; color: var(--muted); }
+    .row .actions { margin-top: 6px; }
     .pitch::after { left: 78%; }
     .pitch::before { left: 78%; }
   }
@@ -177,11 +206,11 @@
         <p>Entra con la password che ti ha dato il capitano.</p>
       </div>
     </div>
-    <form class="card" id="loginForm" autocomplete="off">
+    <form class="card" id="loginForm" autocomplete="off" novalidate>
       <label for="pwd">Password</label>
-      <input id="pwd" type="password" required>
+      <input id="pwd" type="password">
       <p class="msg" id="loginMsg" role="alert"></p>
-      <button type="submit">Entra in campo</button>
+      <button type="submit" id="loginBtn">Entra in campo</button>
     </form>
   </section>
 
@@ -190,35 +219,43 @@
     <div class="pitch">
       <div>
         <h1>Ordine maglie</h1>
-        <p>Aggiungi la tua maglia: link, taglia e note.</p>
+        <p>Aggiungi la tua maglia: link, taglia e personalizzazione.</p>
         <p style="margin-top:14px"><a class="btn shop" href="https://www.11calcio-it.com/" target="_blank" rel="noopener noreferrer">Vai al negozio</a></p>
       </div>
-      <div class="shirt" aria-live="polite"><b id="count">0</b><span>maglie in rosa</span></div>
+      <div class="shirt" aria-live="polite"><b id="count">0</b><span id="countLabel">maglie in rosa</span></div>
     </div>
 
     <div id="adminBar" class="adminbar hidden">
-      <span>Area admin attiva: puoi modificare ed eliminare le righe.</span>
+      <span>Area admin attiva: puoi modificare ed eliminare tutte le righe.</span>
       <button class="small ghost" id="adminExit" type="button">Esci dall'area admin</button>
     </div>
 
-    <form class="card" id="addForm" autocomplete="off">
+    <form class="card" id="addForm" autocomplete="off" novalidate>
       <h2>Aggiungi la tua maglia</h2>
       <div class="grid">
         <div>
-          <label for="nome">Nome</label>
-          <input id="nome" maxlength="50" required>
+          <label for="nome">Il tuo nome</label>
+          <input id="nome" name="nome" maxlength="50">
         </div>
         <div>
           <label for="taglia">Taglia</label>
-          <select id="taglia" required><option value="">Scegli</option></select>
+          <select id="taglia" name="taglia"><option value="">Scegli</option></select>
         </div>
         <div class="span2">
           <label for="link">Link della maglia</label>
-          <input id="link" type="url" inputmode="url" placeholder="https://www.11calcio-it.com/..." maxlength="500" required>
+          <input id="link" name="link" type="url" inputmode="url" placeholder="https://www.11calcio-it.com/..." maxlength="500">
+        </div>
+        <div>
+          <label for="stampa">Nome del giocatore <small>(facoltativo)</small></label>
+          <input id="stampa" name="stampa" maxlength="15" placeholder="Es. LAUTARO" style="text-transform:uppercase">
+        </div>
+        <div>
+          <label for="numero">Numero <small>(facoltativo)</small></label>
+          <input id="numero" name="numero" maxlength="2" inputmode="numeric" placeholder="Es. 10">
         </div>
         <div class="span2">
-          <label for="note">Note</label>
-          <input id="note" maxlength="200" placeholder="Numero, nome sulla schiena, patch...">
+          <label for="note">Note <small>(facoltativo)</small></label>
+          <input id="note" name="note" maxlength="200" placeholder="Patch, versione retro, maniche lunghe...">
         </div>
       </div>
       <p class="msg" id="addMsg" role="status"></p>
@@ -226,20 +263,24 @@
     </form>
 
     <div class="card">
-      <h2>La rosa</h2>
-      <div id="list"></div>
+      <div class="cardhead">
+        <h2>La rosa</h2>
+        <div class="sizes" id="sizeSummary" aria-label="Maglie per taglia"></div>
+      </div>
+      <p class="msg" id="listMsg" role="alert"></p>
+      <div id="list" class="list"></div>
     </div>
 
     <div class="foot">
       <button type="button" id="adminOpen" class="small">Area admin</button>
     </div>
 
-    <form class="card hidden" id="adminForm" style="margin-top:16px" autocomplete="off">
+    <form class="card hidden" id="adminForm" style="margin-top:16px" autocomplete="off" novalidate>
       <h2>Area admin</h2>
       <label for="adminPwd">Password admin</label>
-      <input id="adminPwd" type="password" required>
+      <input id="adminPwd" type="password">
       <p class="msg" id="adminMsg" role="alert"></p>
-      <button type="submit">Accedi</button>
+      <button type="submit" id="adminBtn">Accedi</button>
     </form>
   </section>
 </div>
@@ -247,12 +288,16 @@
 <script>
   // Dopo aver pubblicato lo script Google, incolla qui l'URL dell'app web (finisce con /exec)
   const API_URL = 'https://script.google.com/macros/s/AKfycbyPa5LFzcUlee-FW4Qg5Sjd0paOfo8bfYYbHYugyUwMpWj62ZkYYfPfXGBwVpL1MXqpDw/exec';
+  const TOKENS_KEY = 'ordine_maglie_tokens';
 
   const $ = (id) => document.getElementById(id);
   let pwd = '';
   let adminPwd = '';
   let isAdmin = false;
   let sizes = [];
+  let uid = 0;
+
+  // ---------- utilita' ----------
 
   async function api(payload) {
     if (API_URL.indexOf('https://') !== 0) {
@@ -270,26 +315,32 @@
     }
   }
 
-  function setMsg(id, text, kind) {
-    const el = $(id);
+  // i token permettono di modificare le proprie maglie da questo browser
+  function readTokens() {
+    try { return JSON.parse(localStorage.getItem(TOKENS_KEY)) || {}; } catch (e) { return {}; }
+  }
+  function writeTokens(map) {
+    try { localStorage.setItem(TOKENS_KEY, JSON.stringify(map)); } catch (e) { /* storage non disponibile */ }
+  }
+  function sessGet(k) { try { return sessionStorage.getItem(k); } catch (e) { return null; } }
+  function sessSet(k, v) {
+    try { if (v === null) sessionStorage.removeItem(k); else sessionStorage.setItem(k, v); } catch (e) { /* ignora */ }
+  }
+
+  function setMsg(target, text, kind) {
+    const el = typeof target === 'string' ? $(target) : target;
     el.textContent = text || '';
     el.className = 'msg' + (kind ? ' ' + kind : '');
   }
 
-  function isHttpUrl(v) { return /^https?:\/\/\S+$/i.test(v); }
-
-  function fillSizes(select, selected) {
-    select.innerHTML = '';
-    const first = document.createElement('option');
-    first.value = ''; first.textContent = 'Scegli';
-    select.appendChild(first);
-    sizes.forEach((s) => {
-      const o = document.createElement('option');
-      o.value = s; o.textContent = s;
-      if (s === selected) o.selected = true;
-      select.appendChild(o);
-    });
+  async function withBusy(btn, label, fn) {
+    const old = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = label;
+    try { return await fn(); } finally { btn.disabled = false; btn.textContent = old; }
   }
+
+  function isHttpUrl(v) { return /^https?:\/\/\S+$/i.test(v); }
 
   function el(tag, cls, text) {
     const e = document.createElement(tag);
@@ -297,6 +348,34 @@
     if (text !== undefined) e.textContent = text;
     return e;
   }
+
+  function fillSizes(select, selected) {
+    select.innerHTML = '';
+    const first = el('option', '', 'Scegli');
+    first.value = '';
+    select.appendChild(first);
+    sizes.forEach((s) => {
+      const o = el('option', '', s);
+      o.value = s;
+      if (s === selected) o.selected = true;
+      select.appendChild(o);
+    });
+  }
+
+  // legge i campi di un modulo (aggiunta o modifica) e li controlla
+  function collect(form) {
+    const v = (n) => (form.elements[n] ? form.elements[n].value.trim() : '');
+    return { nome: v('nome'), link: v('link'), taglia: v('taglia'), stampa: v('stampa').toUpperCase(), numero: v('numero'), note: v('note') };
+  }
+  function check(d) {
+    if (!d.nome) return 'Inserisci il tuo nome.';
+    if (!d.taglia) return 'Scegli una taglia.';
+    if (!isHttpUrl(d.link)) return 'Il link deve iniziare con http:// o https://';
+    if (d.numero && !/^\d{1,2}$/.test(d.numero)) return 'Il numero deve essere tra 0 e 99.';
+    return '';
+  }
+
+  // ---------- elenco ----------
 
   function linkCell(url) {
     const td = el('div', 'linkcell');
@@ -310,22 +389,41 @@
     return td;
   }
 
+
+  function editAction(r, payload) {
+    if (isAdmin) return Object.assign({ action: 'admin' + payload.kind, adminPwd: adminPwd, id: r.id }, payload.data);
+    return Object.assign({ action: 'own' + payload.kind, pwd: pwd, id: r.id, token: readTokens()[r.id] || '' }, payload.data);
+  }
+
   function renderRow(r) {
-    const row = el('div', 'row' + (isAdmin ? ' admin' : ''));
-    row.appendChild(el('div', 'nome', r.nome));
+    const row = el('div', 'row');
+    const nome = el('div', 'nome', r.nome);
+    if (r.mine && !isAdmin) nome.appendChild(el('span', 'tag', 'la tua'));
+    row.appendChild(nome);
     row.appendChild(linkCell(r.link));
     const t = el('div', 'taglia'); t.appendChild(el('span', 'size', r.taglia));
     row.appendChild(t);
+    row.appendChild(el('div', 'giocatore', r.stampa || ''));
+    row.appendChild(el('div', 'numero', r.numero || ''));
     row.appendChild(el('div', 'note', r.note || ''));
-    if (isAdmin) {
+    if (isAdmin || r.mine) {
       const actions = el('div', 'actions');
       const edit = el('button', 'small ghost', 'Modifica'); edit.type = 'button';
       const del = el('button', 'small danger', 'Elimina'); del.type = 'button';
-      edit.addEventListener('click', () => row.replaceWith(editRow(r)));
+      edit.setAttribute('aria-label', 'Modifica la maglia di ' + r.nome);
+      del.setAttribute('aria-label', 'Elimina la maglia di ' + r.nome);
+      edit.addEventListener('click', () => {
+        const box = editBox(r);
+        row.replaceWith(box);
+        box.querySelector('input').focus();
+      });
       del.addEventListener('click', async () => {
         if (!confirm('Eliminare la maglia di ' + r.nome + '?')) return;
-        const res = await api({ action: 'adminDelete', adminPwd: adminPwd, id: r.id });
-        if (res.ok) loadList(); else alert(res.error || 'Errore.');
+        await withBusy(del, 'Elimino...', async () => {
+          const res = await api(editAction(r, { kind: 'Delete', data: {} }));
+          if (res.ok) { setMsg('listMsg', ''); await loadList(); }
+          else setMsg('listMsg', res.error || 'Errore.', 'err');
+        });
       });
       actions.append(edit, del);
       row.appendChild(actions);
@@ -333,86 +431,161 @@
     return row;
   }
 
-  function editRow(r) {
-    const box = el('form', 'row admin');
-    const nome = el('input'); nome.value = r.nome; nome.maxLength = 50; nome.required = true; nome.setAttribute('aria-label', 'Nome');
-    const link = el('input'); link.value = r.link; link.maxLength = 500; link.required = true; link.setAttribute('aria-label', 'Link');
-    const taglia = el('select'); taglia.setAttribute('aria-label', 'Taglia'); fillSizes(taglia, r.taglia);
-    const note = el('input'); note.value = r.note || ''; note.maxLength = 200; note.setAttribute('aria-label', 'Note');
+  function field(labelText, control, cls) {
+    const wrap = el('div', cls);
+    control.id = 'f' + (++uid);
+    const label = el('label', '', labelText);
+    label.htmlFor = control.id;
+    wrap.append(label, control);
+    return wrap;
+  }
+
+  function input(name, value, props) {
+    const i = document.createElement('input');
+    i.name = name;
+    i.value = value || '';
+    Object.assign(i, props || {});
+    return i;
+  }
+
+  function editBox(r) {
+    const box = el('form', 'editbox');
+    box.noValidate = true;
+    box.autocomplete = 'off';
+    box.appendChild(el('p', 'edittitle', 'Modifica la maglia di ' + r.nome));
+    const taglia = document.createElement('select');
+    taglia.name = 'taglia';
+    fillSizes(taglia, r.taglia);
+    const stampa = input('stampa', r.stampa, { maxLength: 15 });
+    stampa.style.textTransform = 'uppercase';
+    const grid = el('div', 'grid');
+    grid.append(
+      field('Nome', input('nome', r.nome, { maxLength: 50 })),
+      field('Taglia', taglia),
+      field('Link della maglia', input('link', r.link, { maxLength: 500, type: 'url', inputMode: 'url' }), 'span2'),
+      field('Nome del giocatore', stampa),
+      field('Numero', input('numero', r.numero, { maxLength: 2, inputMode: 'numeric' })),
+      field('Note', input('note', r.note, { maxLength: 200 }), 'span2')
+    );
+    const msg = el('p', 'msg'); msg.setAttribute('role', 'alert');
     const actions = el('div', 'actions');
     const save = el('button', 'small', 'Salva'); save.type = 'submit';
     const cancel = el('button', 'small ghost', 'Annulla'); cancel.type = 'button';
     actions.append(save, cancel);
-    box.append(nome, link, taglia, note, actions);
+    box.append(grid, msg, actions);
+
     cancel.addEventListener('click', () => box.replaceWith(renderRow(r)));
     box.addEventListener('submit', async (ev) => {
       ev.preventDefault();
-      if (!isHttpUrl(link.value.trim())) { alert('Il link deve iniziare con http:// o https://'); return; }
-      const res = await api({
-        action: 'adminUpdate', adminPwd: adminPwd, id: r.id,
-        nome: nome.value, link: link.value, taglia: taglia.value, note: note.value
+      const d = collect(box);
+      const err = check(d);
+      if (err) { setMsg(msg, err, 'err'); return; }
+      await withBusy(save, 'Salvo...', async () => {
+        const res = await api(editAction(r, { kind: 'Update', data: d }));
+        if (res.ok) await loadList();
+        else setMsg(msg, res.error || 'Errore.', 'err');
       });
-      if (res.ok) loadList(); else alert(res.error || 'Errore.');
     });
     return box;
   }
 
+  function renderSummary(rows) {
+    const box = $('sizeSummary');
+    box.innerHTML = '';
+    if (!rows.length) return;
+    const counts = {};
+    rows.forEach((r) => { counts[r.taglia] = (counts[r.taglia] || 0) + 1; });
+    const order = sizes.concat(Object.keys(counts).filter((s) => sizes.indexOf(s) < 0));
+    order.forEach((s) => {
+      const n = counts[s] || 0;
+      const chip = el('span', 'chip' + (n ? '' : ' zero'));
+      chip.appendChild(el('b', '', s));
+      chip.appendChild(document.createTextNode(String(n)));
+      box.appendChild(chip);
+    });
+  }
+
   async function loadList() {
+    const tokens = readTokens();
     const res = isAdmin
       ? await api({ action: 'adminList', adminPwd: adminPwd })
-      : await api({ action: 'list', pwd: pwd });
+      : await api({ action: 'list', pwd: pwd, tokens: Object.values(tokens) });
     const list = $('list');
     if (!res.ok) {
-      list.textContent = res.error || 'Impossibile caricare l\'elenco.';
+      setMsg('listMsg', res.error || 'Impossibile caricare l\'elenco.', 'err');
       return res;
+    }
+    // tiene solo i token delle righe che esistono ancora
+    if (!isAdmin) {
+      const keep = {};
+      res.rows.forEach((r) => { if (r.mine && tokens[r.id]) keep[r.id] = tokens[r.id]; });
+      writeTokens(keep);
     }
     sizes = res.sizes || sizes;
     if ($('taglia').options.length <= 1) fillSizes($('taglia'));
-    $('count').textContent = res.rows.length;
+
+    const n = res.rows.length;
+    $('count').textContent = n;
+    $('countLabel').textContent = n === 1 ? 'maglia in rosa' : 'maglie in rosa';
+    renderSummary(res.rows);
+
     list.innerHTML = '';
-    if (!res.rows.length) {
+    const withActions = isAdmin || res.rows.some((r) => r.mine);
+    list.className = 'list' + (withActions ? ' has-actions' : '');
+    if (!n) {
       list.appendChild(el('p', 'empty', 'Nessuna maglia ancora. Aggiungi la prima.'));
       return res;
     }
-    const head = el('div', 'row head' + (isAdmin ? ' admin' : ''));
-    ['Nome', 'Maglia', 'Taglia', 'Note'].forEach((h) => head.appendChild(el('div', '', h)));
-    if (isAdmin) head.appendChild(el('div', '', ''));
+    const head = el('div', 'row head');
+    ['Nome', 'Maglia', 'Taglia', 'Giocatore', 'N°', 'Note'].forEach((h) => head.appendChild(el('div', '', h)));
+    if (withActions) head.appendChild(el('div', ''));
     list.appendChild(head);
     res.rows.forEach((r) => list.appendChild(renderRow(r)));
     return res;
   }
 
+  function showApp() {
+    $('login').classList.add('hidden');
+    $('app').classList.remove('hidden');
+  }
+
+  // ---------- eventi ----------
+
   // accesso amici
   $('loginForm').addEventListener('submit', async (ev) => {
     ev.preventDefault();
-    setMsg('loginMsg', 'Controllo in corso...');
-    pwd = $('pwd').value;
-    const res = await api({ action: 'list', pwd: pwd });
-    if (!res.ok) { setMsg('loginMsg', res.error || 'Errore.', 'err'); return; }
-    sessionStorage.setItem('pwd', pwd);
-    $('login').classList.add('hidden');
-    $('app').classList.remove('hidden');
-    await loadList();
+    const value = $('pwd').value;
+    if (!value) { setMsg('loginMsg', 'Inserisci la password.', 'err'); return; }
+    await withBusy($('loginBtn'), 'Controllo...', async () => {
+      setMsg('loginMsg', '');
+      const res = await api({ action: 'list', pwd: value });
+      if (!res.ok) { setMsg('loginMsg', res.error || 'Errore.', 'err'); return; }
+      pwd = value;
+      sessSet('pwd', pwd);
+      showApp();
+      await loadList();
+    });
   });
 
   // aggiunta maglia
   $('addForm').addEventListener('submit', async (ev) => {
     ev.preventDefault();
-    const nome = $('nome').value.trim();
-    const link = $('link').value.trim();
-    const taglia = $('taglia').value;
-    const note = $('note').value.trim();
-    if (!nome) { setMsg('addMsg', 'Inserisci il tuo nome.', 'err'); return; }
-    if (!isHttpUrl(link)) { setMsg('addMsg', 'Il link deve iniziare con http:// o https://', 'err'); return; }
-    if (!taglia) { setMsg('addMsg', 'Scegli una taglia.', 'err'); return; }
-    $('addBtn').disabled = true;
-    setMsg('addMsg', 'Invio in corso...');
-    const res = await api({ action: 'add', pwd: pwd, nome: nome, link: link, taglia: taglia, note: note });
-    $('addBtn').disabled = false;
-    if (!res.ok) { setMsg('addMsg', res.error || 'Errore.', 'err'); return; }
-    $('nome').value = ''; $('link').value = ''; $('note').value = ''; $('taglia').value = '';
-    setMsg('addMsg', 'Maglia aggiunta alla rosa.', 'ok');
-    loadList();
+    const d = collect($('addForm'));
+    const err = check(d);
+    if (err) { setMsg('addMsg', err, 'err'); return; }
+    setMsg('addMsg', '');
+    await withBusy($('addBtn'), 'Invio in corso...', async () => {
+      const res = await api(Object.assign({ action: 'add', pwd: pwd }, d));
+      if (!res.ok) { setMsg('addMsg', res.error || 'Errore.', 'err'); return; }
+      if (res.id && res.token) {
+        const tokens = readTokens();
+        tokens[res.id] = res.token;
+        writeTokens(tokens);
+      }
+      $('addForm').reset();
+      setMsg('addMsg', 'Maglia aggiunta alla rosa. Da questo browser potrai modificarla o eliminarla.', 'ok');
+      await loadList();
+    });
   });
 
   // area admin
@@ -422,38 +595,38 @@
   });
   $('adminForm').addEventListener('submit', async (ev) => {
     ev.preventDefault();
-    setMsg('adminMsg', 'Controllo in corso...');
-    adminPwd = $('adminPwd').value;
-    const res = await api({ action: 'adminList', adminPwd: adminPwd });
-    if (!res.ok) { adminPwd = ''; setMsg('adminMsg', res.error || 'Errore.', 'err'); return; }
-    isAdmin = true;
-    $('adminPwd').value = '';
-    setMsg('adminMsg', '');
-    $('adminForm').classList.add('hidden');
-    $('adminOpen').classList.add('hidden');
-    $('adminBar').classList.remove('hidden');
-    loadList();
+    const value = $('adminPwd').value;
+    if (!value) { setMsg('adminMsg', 'Inserisci la password admin.', 'err'); return; }
+    await withBusy($('adminBtn'), 'Controllo...', async () => {
+      setMsg('adminMsg', '');
+      const res = await api({ action: 'adminList', adminPwd: value });
+      if (!res.ok) { setMsg('adminMsg', res.error || 'Errore.', 'err'); return; }
+      adminPwd = value;
+      isAdmin = true;
+      $('adminPwd').value = '';
+      $('adminForm').classList.add('hidden');
+      $('adminOpen').classList.add('hidden');
+      $('adminBar').classList.remove('hidden');
+      setMsg('listMsg', '');
+      await loadList();
+    });
   });
   $('adminExit').addEventListener('click', () => {
     isAdmin = false; adminPwd = '';
     $('adminBar').classList.add('hidden');
     $('adminOpen').classList.remove('hidden');
+    setMsg('listMsg', '');
     loadList();
   });
 
   // se la password e' gia' stata inserita in questa scheda, entra direttamente
   (async () => {
-    const saved = sessionStorage.getItem('pwd');
+    const saved = sessGet('pwd');
     if (!saved) return;
     pwd = saved;
-    const res = await api({ action: 'list', pwd: pwd });
-    if (res.ok) {
-      $('login').classList.add('hidden');
-      $('app').classList.remove('hidden');
-      await loadList();
-    } else {
-      sessionStorage.removeItem('pwd');
-    }
+    const res = await loadList();
+    if (res.ok) showApp();
+    else { pwd = ''; sessSet('pwd', null); setMsg('listMsg', ''); }
   })();
 </script>
 </body>
