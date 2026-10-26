@@ -176,6 +176,39 @@
   .foot button:hover { background: rgba(255,255,255,.15); }
   .adminbar { background: var(--yellow); border-radius: 6px; padding: 10px 14px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; gap: 12px; font-weight: 600; color: var(--pitch-dark); }
 
+  /* popup istruzioni */
+  .help-btn { background: transparent; border-color: rgba(255,255,255,.75); color: #fff; }
+  .help-btn:hover { background: rgba(255,255,255,.15); border-color: #fff; }
+  .toprow { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+  dialog.help {
+    width: min(520px, calc(100vw - 32px));
+    max-height: calc(100vh - 32px);
+    overflow: auto;
+    border: 0; border-radius: 8px; padding: 0;
+    background: var(--chalk); color: var(--ink);
+    box-shadow: 0 20px 60px rgba(0,0,0,.4);
+  }
+  dialog.help::backdrop { background: rgba(8,30,17,.7); }
+  .help-head { background: var(--pitch); color: #fff; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+  .help-head h2 { font-size: 24px; }
+  .help-close { min-height: 36px; width: 36px; padding: 0; font-size: 22px; line-height: 1; background: transparent; border-color: rgba(255,255,255,.6); }
+  .help-body { padding: 18px 20px 20px; }
+  .steps { list-style: none; margin: 0 0 16px; padding: 0; counter-reset: step; }
+  .steps li { counter-increment: step; position: relative; padding: 0 0 14px 46px; min-height: 34px; }
+  .steps li::before {
+    content: counter(step);
+    position: absolute; left: 0; top: -2px;
+    width: 32px; height: 32px; border-radius: 50%;
+    background: var(--yellow); color: var(--pitch-dark);
+    font-family: var(--display); font-weight: 600; font-size: 18px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .steps b { color: var(--pitch-dark); }
+  .help-tip { background: #fff; border-left: 4px solid var(--yellow); padding: 10px 12px; margin: 0 0 16px; font-size: 15px; }
+  .help-foot { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .check { display: flex; align-items: center; gap: 8px; font-weight: 400; margin: 0; font-size: 15px; cursor: pointer; }
+  .check input { width: 20px; min-height: 20px; height: 20px; margin: 0; accent-color: var(--pitch); }
+
   @media (max-width: 640px) {
     .grid { grid-template-columns: 1fr; }
     .span2 { grid-column: auto; }
@@ -220,7 +253,7 @@
       <div>
         <h1>Ordine maglie</h1>
         <p>Aggiungi la tua maglia: link, taglia e personalizzazione.</p>
-        <p style="margin-top:14px"><a class="btn shop" href="https://www.11calcio-it.com/" target="_blank" rel="noopener noreferrer">Vai al negozio</a></p>
+        <div class="toprow"><a class="btn shop" href="https://www.11calcio-it.com/" target="_blank" rel="noopener noreferrer">Vai al negozio</a><button type="button" class="help-btn" id="helpOpen">Come funziona?</button></div>
       </div>
       <div class="shirt" aria-live="polite"><b id="count">0</b><span id="countLabel">maglie in rosa</span></div>
     </div>
@@ -284,6 +317,27 @@
     </form>
   </section>
 </div>
+
+  <!-- POPUP ISTRUZIONI -->
+  <dialog class="help" id="help" aria-labelledby="helpTitle">
+    <div class="help-head">
+      <h2 id="helpTitle">Come funziona</h2>
+      <button type="button" class="help-close" id="helpX" aria-label="Chiudi">&times;</button>
+    </div>
+    <div class="help-body">
+      <ol class="steps">
+        <li>Premi <b>Vai al negozio</b>, trova la maglia che vuoi e <b>copia il link</b> dalla barra degli indirizzi (sul telefono: tasto Condividi › Copia).</li>
+        <li>Torna su questa pagina e compila: <b>il tuo nome</b>, la <b>taglia</b> e <b>incolla il link</b>.</li>
+        <li>Vuoi nome e numero sulla schiena? Scrivili nei campi <b>Nome del giocatore</b> e <b>Numero</b>. Patch e altre richieste vanno nelle <b>Note</b>.</li>
+        <li>Premi <b>Aggiungi alla rosa</b>. La tua maglia compare nell'elenco in basso con l'etichetta <b>la tua</b>.</li>
+      </ol>
+      <p class="help-tip">Hai sbagliato qualcosa? Premi <b>Modifica</b> o <b>Elimina</b> sulla tua maglia, ma solo dallo <b>stesso telefono o PC</b> con cui l'hai inserita. Altrimenti scrivi al capitano.</p>
+      <div class="help-foot">
+        <label class="check"><input type="checkbox" id="helpHide"> Non mostrarlo più</label>
+        <button type="button" id="helpOk">Ho capito, andiamo</button>
+      </div>
+    </div>
+  </dialog>
 
 <script>
   // Dopo aver pubblicato lo script Google, incolla qui l'URL dell'app web (finisce con /exec)
@@ -544,9 +598,34 @@
     return res;
   }
 
-  function showApp() {
+  function showApp(fromLogin) {
     $('login').classList.add('hidden');
     $('app').classList.remove('hidden');
+    if (fromLogin) maybeShowHelp();
+  }
+
+  // ---------- popup istruzioni ----------
+  const HELP_KEY = 'ordine_maglie_help_nascosto';
+  function openHelp() {
+    let hidden = false;
+    try { hidden = localStorage.getItem(HELP_KEY) === '1'; } catch (e) { /* ignora */ }
+    $('helpHide').checked = hidden;
+    const d = $('help');
+    if (typeof d.showModal === 'function') d.showModal(); else d.setAttribute('open', '');
+    $('helpOk').focus();
+  }
+  function closeHelp() {
+    try {
+      if ($('helpHide').checked) localStorage.setItem(HELP_KEY, '1');
+      else localStorage.removeItem(HELP_KEY);
+    } catch (e) { /* ignora */ }
+    const d = $('help');
+    if (typeof d.close === 'function' && d.open) d.close(); else d.removeAttribute('open');
+  }
+  function maybeShowHelp() {
+    let hidden = false;
+    try { hidden = localStorage.getItem(HELP_KEY) === '1'; } catch (e) { /* ignora */ }
+    if (!hidden) openHelp();
   }
 
   // ---------- eventi ----------
@@ -562,7 +641,7 @@
       if (!res.ok) { setMsg('loginMsg', res.error || 'Errore.', 'err'); return; }
       pwd = value;
       sessSet('pwd', pwd);
-      showApp();
+      showApp(true);
       await loadList();
     });
   });
@@ -587,6 +666,13 @@
       await loadList();
     });
   });
+
+  // popup istruzioni
+  $('helpOpen').addEventListener('click', openHelp);
+  $('helpOk').addEventListener('click', closeHelp);
+  $('helpX').addEventListener('click', closeHelp);
+  $('help').addEventListener('cancel', (ev) => { ev.preventDefault(); closeHelp(); }); // tasto Esc
+  $('help').addEventListener('click', (ev) => { if (ev.target === $('help')) closeHelp(); }); // clic fuori
 
   // area admin
   $('adminOpen').addEventListener('click', () => {
@@ -625,7 +711,7 @@
     if (!saved) return;
     pwd = saved;
     const res = await loadList();
-    if (res.ok) showApp();
+    if (res.ok) showApp(true);
     else { pwd = ''; sessSet('pwd', null); setMsg('listMsg', ''); }
   })();
 </script>
